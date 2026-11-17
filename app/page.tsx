@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function Home(){return <main style={{maxWidth:1000,margin:"0 auto",padding:48,fontFamily:"system-ui"}}><p>🐾 Taiwan Pet ID</p><h1>One pet. One verified identity. One free QR.</h1><p>Free digital pet identity with a third-party government verification layer and veterinary clinic portal.</p><p><Link href="/owner">Pet Owner</Link>　<Link href="/clinic">Clinic Portal</Link></p></main>}
