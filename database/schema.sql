@@ -1,0 +1,4 @@
+create table if not exists pets(id uuid primary key,government_reference_hash text not null unique,government_verified_at timestamptz,name text not null,species text,breed text,birth_date date,lost boolean not null default false,created_at timestamptz not null default now());
+create table if not exists pet_qr_codes(id uuid primary key,pet_id uuid not null references pets(id) on delete cascade,public_token text not null unique,active boolean not null default true,created_at timestamptz not null default now());
+create table if not exists health_records(id uuid primary key,pet_id uuid not null references pets(id) on delete cascade,clinic_id uuid,record_type text not null,summary text not null,occurred_at timestamptz not null,created_at timestamptz not null default now());
+-- government_reference_hash is UNIQUE: one verified government identity maps to one Digital Pet ID.
