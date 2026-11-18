@@ -17,12 +17,19 @@ async function ensureSchema(database: any) {
       show_name INTEGER NOT NULL DEFAULT 1,
       show_city INTEGER NOT NULL DEFAULT 0,
       show_contact INTEGER NOT NULL DEFAULT 0,
+      lost INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL
     )`
   ).run();
 
   try {
     await database.prepare("ALTER TABLE pets ADD COLUMN owner_id TEXT").run();
+  } catch {
+    // Column already exists.
+  }
+
+  try {
+    await database.prepare("ALTER TABLE pets ADD COLUMN lost INTEGER NOT NULL DEFAULT 0").run();
   } catch {
     // Column already exists.
   }
@@ -55,6 +62,7 @@ export async function GET(
 
   return NextResponse.json({
     petId: row.pet_id,
+    lost: Boolean(row.lost),
     ...(row.show_name ? { name: row.name } : {}),
     ...(row.show_city && row.city ? { city: row.city } : {}),
     ...(row.show_contact && row.contact ? { contact: row.contact } : {}),
@@ -99,12 +107,13 @@ export async function POST(
   const showName = body.showName ? 1 : 0;
   const showCity = body.showCity ? 1 : 0;
   const showContact = body.showContact ? 1 : 0;
+  const lost = body.lost ? 1 : 0;
 
   await database
     .prepare(
       `INSERT INTO pets
-        (pet_id, owner_id, name, city, contact, show_name, show_city, show_contact, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (pet_id, owner_id, name, city, contact, show_name, show_city, show_contact, lost, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(pet_id) DO UPDATE SET
         owner_id = excluded.owner_id,
         name = excluded.name,
@@ -113,6 +122,7 @@ export async function POST(
         show_name = excluded.show_name,
         show_city = excluded.show_city,
         show_contact = excluded.show_contact,
+        lost = excluded.lost,
         updated_at = excluded.updated_at`
     )
     .bind(
@@ -124,6 +134,7 @@ export async function POST(
       showName,
       showCity,
       showContact,
+      lost,
       new Date().toISOString()
     )
     .run();
