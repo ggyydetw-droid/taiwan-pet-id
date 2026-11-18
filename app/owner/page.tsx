@@ -19,8 +19,12 @@ export default function Owner() {
   const [showContact, setShowContact] = useState(false);
   const [city, setCity] = useState("");
   const [contact, setContact] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [copyLabel, setCopyLabel] = useState("Copy public link");
 
   async function verify() {
+    setSaved(false);
     const r = await fetch("/api/government/verify", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -28,19 +32,17 @@ export default function Owner() {
     });
     const data = await r.json();
     setResult(data);
+
     if (data.verified && data.petId) {
-      await fetch(`/api/pets/${encodeURIComponent(data.petId)}`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: data.name,
-          city: "",
-          contact: "",
-          showName: true,
-          showCity: false,
-          showContact: false,
-        }),
-      });
+      const profile = await fetch(`/api/pets/${encodeURIComponent(data.petId)}`);
+      if (profile.ok) {
+        const existing = await profile.json();
+        setShowName(Boolean(existing.name));
+        setShowCity(Boolean(existing.city));
+        setShowContact(Boolean(existing.contact));
+        setCity(existing.city || "");
+        setContact(existing.contact || "");
+      }
     }
   }
 
@@ -51,7 +53,11 @@ export default function Owner() {
 
   async function savePublicProfile() {
     if (!result?.verified || !result.petId || !result.name) return;
-    await fetch(`/api/pets/${encodeURIComponent(result.petId)}`, {
+
+    setSaving(true);
+    setSaved(false);
+
+    const response = await fetch(`/api/pets/${encodeURIComponent(result.petId)}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -63,87 +69,194 @@ export default function Owner() {
         showContact,
       }),
     });
+
+    setSaving(false);
+
+    if (response.ok) {
+      setSaved(true);
+    }
+  }
+
+  async function copyPublicLink() {
+    if (!publicUrl) return;
+    await navigator.clipboard.writeText(publicUrl);
+    setCopyLabel("Copied!");
+    window.setTimeout(() => setCopyLabel("Copy public link"), 1800);
   }
 
   return (
     <main className="page">
       <div className="card">
-        <h1>Create a free Digital Pet ID</h1>
+        <p>🐾 Taiwan Pet ID</p>
+        <h1>Owner Dashboard</h1>
         <p>
-          Enter the government registration or microchip reference. The MVP
-          uses a sandbox connector until an authorized third-party government
-          interface is available.
+          Verify a pet to manage its public profile, QR code, and Pet ID page.
         </p>
 
-        <div className="field">
-          <label>Pet name</label>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Milo" />
-        </div>
-
-        <div className="field">
-          <label>Government / microchip reference</label>
-          <input value={chip} onChange={e => setChip(e.target.value)} placeholder="900123456789012" />
-        </div>
-
-        <button className="button" onClick={verify}>Verify & create free ID</button>
-
-        {result && (
-          <div className={result.verified ? "status" : "status warning"}>
-            {result.verified ? `Verified: ${result.name} · ${result.petId}` : result.message}
-          </div>
-        )}
-
-        {result?.verified && result.petId && (
-          <section style={{ marginTop: 24 }}>
-            <h2>Choose what the public QR shows</h2>
-            <p>
-              Only the options you select below are placed in the public QR link.
-              Do not add sensitive information.
-            </p>
+        {!result?.verified && (
+          <section>
+            <h2>My Pet</h2>
 
             <div className="field">
-              <label>
-                <input type="checkbox" checked={showName} onChange={e => setShowName(e.target.checked)} />
-                {" "}Show pet name
-              </label>
-              <label>
-                <input type="checkbox" checked={showCity} onChange={e => setShowCity(e.target.checked)} />
-                {" "}Show city
-              </label>
-              <label>
-                <input type="checkbox" checked={showContact} onChange={e => setShowContact(e.target.checked)} />
-                {" "}Show owner contact
-              </label>
+              <label>Pet name</label>
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Milo"
+              />
             </div>
 
-            {showCity && (
-              <div className="field">
-                <label>City</label>
-                <input value={city} onChange={e => setCity(e.target.value)} placeholder="Taoyuan" />
-              </div>
-            )}
+            <div className="field">
+              <label>Government / microchip reference</label>
+              <input
+                value={chip}
+                onChange={e => setChip(e.target.value)}
+                placeholder="900123456789012"
+              />
+            </div>
 
-            {showContact && (
-              <div className="field">
-                <label>Public contact message</label>
-                <input value={contact} onChange={e => setContact(e.target.value)} placeholder="Contact me if found" />
-              </div>
-            )}
-
-            <button className="button" onClick={savePublicProfile} style={{ marginTop: 12 }}>
-              Save public profile
+            <button className="button" onClick={verify}>
+              Verify & open dashboard
             </button>
 
-            {publicUrl && (
-              <div style={{ marginTop: 24, textAlign: "center" }}>
-                <div style={{ display: "inline-block", background: "#fff", padding: 16, borderRadius: 12, border: "1px solid #ddd" }}>
-                  <QRCodeSVG value={publicUrl} size={220} level="H" />
-                </div>
-                <p style={{ marginTop: 12, fontWeight: 700 }}>Scan to open this pet's public ID</p>
-                <a href={publicUrl} target="_blank" rel="noreferrer">Open public pet page</a>
+            {result && (
+              <div className={result.verified ? "status" : "status warning"}>
+                {result.verified
+                  ? `Verified: ${result.name} · ${result.petId}`
+                  : result.message}
               </div>
             )}
           </section>
+        )}
+
+        {result?.verified && result.petId && (
+          <>
+            <section className="status" style={{ marginTop: 20 }}>
+              <strong>{result.name}'s Pet ID</strong>
+              <br />
+              {result.petId}
+            </section>
+
+            <section style={{ marginTop: 24 }}>
+              <h2>Public profile</h2>
+              <p>
+                Choose exactly what someone who scans the QR code can see.
+              </p>
+
+              <div className="field">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showName}
+                    onChange={e => setShowName(e.target.checked)}
+                  />{" "}
+                  Show pet name
+                </label>
+
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showCity}
+                    onChange={e => setShowCity(e.target.checked)}
+                  />{" "}
+                  Show city
+                </label>
+
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showContact}
+                    onChange={e => setShowContact(e.target.checked)}
+                  />{" "}
+                  Show owner contact
+                </label>
+              </div>
+
+              {showCity && (
+                <div className="field">
+                  <label>City</label>
+                  <input
+                    value={city}
+                    onChange={e => setCity(e.target.value)}
+                    placeholder="Taoyuan"
+                  />
+                </div>
+              )}
+
+              {showContact && (
+                <div className="field">
+                  <label>Public contact message</label>
+                  <input
+                    value={contact}
+                    onChange={e => setContact(e.target.value)}
+                    placeholder="Contact me if found"
+                  />
+                </div>
+              )}
+
+              <button
+                className="button"
+                onClick={savePublicProfile}
+                disabled={saving}
+                style={{ marginTop: 12 }}
+              >
+                {saving ? "Saving..." : "Save public profile"}
+              </button>
+
+              {saved && (
+                <div className="status" style={{ marginTop: 12 }}>
+                  Public profile saved successfully.
+                </div>
+              )}
+            </section>
+
+            {publicUrl && (
+              <section style={{ marginTop: 28, textAlign: "center" }}>
+                <h2>Pet QR code</h2>
+
+                <div
+                  style={{
+                    display: "inline-block",
+                    background: "#fff",
+                    padding: 16,
+                    borderRadius: 12,
+                    border: "1px solid #ddd",
+                  }}
+                >
+                  <QRCodeSVG value={publicUrl} size={220} level="H" />
+                </div>
+
+                <p style={{ marginTop: 12, fontWeight: 700 }}>
+                  Scan to open {result.name}'s public Pet ID
+                </p>
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    justifyContent: "center",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <a href={publicUrl} target="_blank" rel="noreferrer">
+                    Open public pet page
+                  </a>
+
+                  <button className="button" onClick={copyPublicLink}>
+                    {copyLabel}
+                  </button>
+                </div>
+              </section>
+            )}
+
+            <section style={{ marginTop: 28 }}>
+              <h2>Pet ID status</h2>
+              <p>
+                <strong>Active</strong> — this Pet ID is available through its
+                public QR page.
+              </p>
+            </section>
+          </>
         )}
       </div>
     </main>
