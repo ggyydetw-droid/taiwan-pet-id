@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "taiwan-pet-id",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "taiwan_pet_id",
+      "database_id": "9300d285-0548-4e78-bb98-bdb03c2dc647"
+    }
+  ]
+}
