@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { useRouter } from "next/navigation";
 
 type VerifyResult = {
   verified: boolean;
@@ -11,6 +12,9 @@ type VerifyResult = {
 };
 
 export default function Owner() {
+  const router = useRouter();
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [chip, setChip] = useState("");
   const [result, setResult] = useState<VerifyResult>();
@@ -22,6 +26,26 @@ export default function Owner() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copyLabel, setCopyLabel] = useState("Copy public link");
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(async response => {
+        const data = await response.json();
+        if (!response.ok || !data.authenticated) {
+          router.replace("/login");
+          return;
+        }
+        setEmail(data.user.email);
+        setCheckingAuth(false);
+      })
+      .catch(() => router.replace("/login"));
+  }, [router]);
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/login");
+    router.refresh();
+  }
 
   async function verify() {
     setSaved(false);
@@ -72,9 +96,7 @@ export default function Owner() {
 
     setSaving(false);
 
-    if (response.ok) {
-      setSaved(true);
-    }
+    if (response.ok) setSaved(true);
   }
 
   async function copyPublicLink() {
@@ -84,14 +106,29 @@ export default function Owner() {
     window.setTimeout(() => setCopyLabel("Copy public link"), 1800);
   }
 
+  if (checkingAuth) {
+    return (
+      <main className="page">
+        <div className="card">
+          <p>Checking owner account…</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="page">
       <div className="card">
-        <p>🐾 Taiwan Pet ID</p>
-        <h1>Owner Dashboard</h1>
-        <p>
-          Verify a pet to manage its public profile, QR code, and Pet ID page.
-        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+          <div>
+            <p>🐾 Taiwan Pet ID</p>
+            <h1>Owner Dashboard</h1>
+          </div>
+          <button className="button" onClick={logout}>Sign out</button>
+        </div>
+
+        <p>Signed in as {email}</p>
+        <p>Verify a pet to manage its public profile, QR code, and Pet ID page.</p>
 
         {!result?.verified && (
           <section>
@@ -99,11 +136,7 @@ export default function Owner() {
 
             <div className="field">
               <label>Pet name</label>
-              <input
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Milo"
-              />
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Milo" />
             </div>
 
             <div className="field">
@@ -139,35 +172,19 @@ export default function Owner() {
 
             <section style={{ marginTop: 24 }}>
               <h2>Public profile</h2>
-              <p>
-                Choose exactly what someone who scans the QR code can see.
-              </p>
+              <p>Choose exactly what someone who scans the QR code can see.</p>
 
               <div className="field">
                 <label>
-                  <input
-                    type="checkbox"
-                    checked={showName}
-                    onChange={e => setShowName(e.target.checked)}
-                  />{" "}
+                  <input type="checkbox" checked={showName} onChange={e => setShowName(e.target.checked)} />{" "}
                   Show pet name
                 </label>
-
                 <label>
-                  <input
-                    type="checkbox"
-                    checked={showCity}
-                    onChange={e => setShowCity(e.target.checked)}
-                  />{" "}
+                  <input type="checkbox" checked={showCity} onChange={e => setShowCity(e.target.checked)} />{" "}
                   Show city
                 </label>
-
                 <label>
-                  <input
-                    type="checkbox"
-                    checked={showContact}
-                    onChange={e => setShowContact(e.target.checked)}
-                  />{" "}
+                  <input type="checkbox" checked={showContact} onChange={e => setShowContact(e.target.checked)} />{" "}
                   Show owner contact
                 </label>
               </div>
@@ -175,11 +192,7 @@ export default function Owner() {
               {showCity && (
                 <div className="field">
                   <label>City</label>
-                  <input
-                    value={city}
-                    onChange={e => setCity(e.target.value)}
-                    placeholder="Taoyuan"
-                  />
+                  <input value={city} onChange={e => setCity(e.target.value)} placeholder="Taoyuan" />
                 </div>
               )}
 
@@ -194,12 +207,7 @@ export default function Owner() {
                 </div>
               )}
 
-              <button
-                className="button"
-                onClick={savePublicProfile}
-                disabled={saving}
-                style={{ marginTop: 12 }}
-              >
+              <button className="button" onClick={savePublicProfile} disabled={saving} style={{ marginTop: 12 }}>
                 {saving ? "Saving..." : "Save public profile"}
               </button>
 
@@ -213,16 +221,7 @@ export default function Owner() {
             {publicUrl && (
               <section style={{ marginTop: 28, textAlign: "center" }}>
                 <h2>Pet QR code</h2>
-
-                <div
-                  style={{
-                    display: "inline-block",
-                    background: "#fff",
-                    padding: 16,
-                    borderRadius: 12,
-                    border: "1px solid #ddd",
-                  }}
-                >
+                <div style={{ display: "inline-block", background: "#fff", padding: 16, borderRadius: 12, border: "1px solid #ddd" }}>
                   <QRCodeSVG value={publicUrl} size={220} level="H" />
                 </div>
 
@@ -230,31 +229,16 @@ export default function Owner() {
                   Scan to open {result.name}'s public Pet ID
                 </p>
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 12,
-                    justifyContent: "center",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <a href={publicUrl} target="_blank" rel="noreferrer">
-                    Open public pet page
-                  </a>
-
-                  <button className="button" onClick={copyPublicLink}>
-                    {copyLabel}
-                  </button>
+                <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                  <a href={publicUrl} target="_blank" rel="noreferrer">Open public pet page</a>
+                  <button className="button" onClick={copyPublicLink}>{copyLabel}</button>
                 </div>
               </section>
             )}
 
             <section style={{ marginTop: 28 }}>
               <h2>Pet ID status</h2>
-              <p>
-                <strong>Active</strong> — this Pet ID is available through its
-                public QR page.
-              </p>
+              <p><strong>Active</strong> — this Pet ID is available through its public QR page.</p>
             </section>
           </>
         )}
