@@ -26,6 +26,7 @@ export default function Owner() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copyLabel, setCopyLabel] = useState("Copy public link");
+  const [lost, setLost] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -66,6 +67,7 @@ export default function Owner() {
         setShowContact(Boolean(existing.contact));
         setCity(existing.city || "");
         setContact(existing.contact || "");
+        setLost(Boolean(existing.lost));
       }
     }
   }
@@ -91,6 +93,7 @@ export default function Owner() {
         showName,
         showCity,
         showContact,
+        lost,
       }),
     });
 
@@ -237,8 +240,37 @@ export default function Owner() {
             )}
 
             <section style={{ marginTop: 28 }}>
+              <h2>Lost Pet Mode</h2>
+              <div className={lost ? "status warning" : "status"}>
+                <strong>{lost ? "🚨 LOST PET" : "Active"}</strong>
+                <br />
+                {lost
+                  ? "The public Pet ID page will prominently show that this pet is lost."
+                  : "Mark this pet as lost if you need the public QR page to show a lost-pet alert."}
+              </div>
+              <label style={{ display: "block", marginTop: 12 }}>
+                <input
+                  type="checkbox"
+                  checked={lost}
+                  onChange={e => setLost(e.target.checked)}
+                />{" "}
+                Mark pet as lost
+              </label>
+              <button
+                className="button"
+                onClick={savePublicProfile}
+                disabled={saving}
+                style={{ marginTop: 12 }}
+              >
+                {saving ? "Saving..." : lost ? "Save lost status" : "Save pet status"}
+              </button>
+            </section>
+
+            <section style={{ marginTop: 28 }}>
               <h2>Pet ID status</h2>
-              <p><strong>Active</strong> — this Pet ID is available through its public QR page.</p>
+              <p>
+                <strong>{lost ? "Lost" : "Active"}</strong> — this Pet ID is available through its public QR page.
+              </p>
             </section>
           </>
         )}
