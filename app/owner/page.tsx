@@ -26,18 +26,44 @@ export default function Owner() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ chip, name }),
     });
-    setResult(await r.json());
+    const data = await r.json();
+    setResult(data);
+    if (data.verified && data.petId) {
+      await fetch(`/api/pets/${encodeURIComponent(data.petId)}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: data.name,
+          city: "",
+          contact: "",
+          showName: true,
+          showCity: false,
+          showContact: false,
+        }),
+      });
+    }
   }
 
   const publicUrl = useMemo(() => {
-    if (!result?.verified || !result.petId) return "";
-    const params = new URLSearchParams();
-    params.set("id", result.petId);
-    if (showName && result.name) params.set("name", result.name);
-    if (showCity && city.trim()) params.set("city", city.trim());
-    if (showContact && contact.trim()) params.set("contact", contact.trim());
-    return `${typeof window !== "undefined" ? window.location.origin : ""}/pet/${encodeURIComponent(result.petId)}#${params.toString()}`;
-  }, [result, showName, showCity, showContact, city, contact]);
+    if (!result?.verified || !result.petId || typeof window === "undefined") return "";
+    return `${window.location.origin}/pet/${encodeURIComponent(result.petId)}`;
+  }, [result]);
+
+  async function savePublicProfile() {
+    if (!result?.verified || !result.petId || !result.name) return;
+    await fetch(`/api/pets/${encodeURIComponent(result.petId)}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: result.name,
+        city,
+        contact,
+        showName,
+        showCity,
+        showContact,
+      }),
+    });
+  }
 
   return (
     <main className="page">
@@ -103,6 +129,10 @@ export default function Owner() {
                 <input value={contact} onChange={e => setContact(e.target.value)} placeholder="Contact me if found" />
               </div>
             )}
+
+            <button className="button" onClick={savePublicProfile} style={{ marginTop: 12 }}>
+              Save public profile
+            </button>
 
             {publicUrl && (
               <div style={{ marginTop: 24, textAlign: "center" }}>
