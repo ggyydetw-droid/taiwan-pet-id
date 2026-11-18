@@ -1,6 +1,6 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser } from "@/app/lib/auth";
+import { getAuthenticatedUser } from "../../../lib/auth";
 
 async function db() {
   const { env } = getCloudflareContext();
@@ -20,6 +20,12 @@ async function ensureSchema(database: any) {
       updated_at TEXT NOT NULL
     )`
   ).run();
+
+  try {
+    await database.prepare("ALTER TABLE pets ADD COLUMN owner_id TEXT").run();
+  } catch {
+    // Column already exists.
+  }
 }
 
 export async function GET(
@@ -79,6 +85,15 @@ export async function POST(
 
   await ensureSchema(database);
 
+  const existing = await database
+    .prepare("SELECT owner_id FROM pets WHERE pet_id = ?")
+    .bind(id)
+    .first();
+
+  if (existing?.owner_id && existing.owner_id !== user.id) {
+    return NextResponse.json({ message: "This Pet ID belongs to another owner account." }, { status: 403 });
+  }
+
   const city = String(body.city ?? "").trim();
   const contact = String(body.contact ?? "").trim();
   const showName = body.showName ? 1 : 0;
@@ -88,9 +103,10 @@ export async function POST(
   await database
     .prepare(
       `INSERT INTO pets
-        (pet_id, name, city, contact, show_name, show_city, show_contact, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (pet_id, owner_id, name, city, contact, show_name, show_city, show_contact, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(pet_id) DO UPDATE SET
+        owner_id = excluded.owner_id,
         name = excluded.name,
         city = excluded.city,
         contact = excluded.contact,
@@ -101,6 +117,7 @@ export async function POST(
     )
     .bind(
       id,
+      user.id,
       name,
       city || null,
       contact || null,
