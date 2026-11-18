@@ -1,5 +1,6 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/app/lib/auth";
 
 async function db() {
   const { env } = getCloudflareContext();
@@ -27,6 +28,7 @@ export async function GET(
 ) {
   const { id } = await params;
   const database = await db();
+
   if (!database) {
     return NextResponse.json({ message: "D1 database binding DB is not configured." }, { status: 500 });
   }
@@ -57,17 +59,22 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { user, database } = await getAuthenticatedUser(request);
+
+  if (!database) {
+    return NextResponse.json({ message: "D1 database binding DB is not configured." }, { status: 500 });
+  }
+
+  if (!user) {
+    return NextResponse.json({ message: "Sign in to manage this pet." }, { status: 401 });
+  }
+
   const { id } = await params;
   const body = await request.json();
   const name = String(body.name ?? "").trim();
 
   if (!id || !name) {
     return NextResponse.json({ message: "Pet ID and pet name are required." }, { status: 400 });
-  }
-
-  const database = await db();
-  if (!database) {
-    return NextResponse.json({ message: "D1 database binding DB is not configured." }, { status: 500 });
   }
 
   await ensureSchema(database);
