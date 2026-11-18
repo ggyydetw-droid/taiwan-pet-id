@@ -7,6 +7,7 @@ type PublicPet = {
   name?: string;
   city?: string;
   contact?: string;
+  lost?: boolean;
 };
 
 export default function PublicPetPage({
@@ -43,6 +44,22 @@ export default function PublicPetPage({
           <>
             <p>🐾 Taiwan Pet ID</p>
             <h1>{pet.name ? `${pet.name}'s Public Pet ID` : "Public Pet ID"}</h1>
+            {pet.lost && (
+              <div
+                className="status warning"
+                style={{
+                  marginBottom: 16,
+                  border: "2px solid #b91c1c",
+                  fontWeight: 800,
+                  textAlign: "center",
+                }}
+              >
+                🚨 LOST PET
+                <br />
+                This pet has been reported lost. If you found this pet, please contact the owner.
+              </div>
+            )}
+
             <div className="status">
               <strong>Verified Pet ID</strong>
               <br />
