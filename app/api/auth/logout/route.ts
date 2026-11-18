@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { clearSessionCookie, deleteCurrentSession } from "@/app/lib/auth";
+import { clearSessionCookie, deleteCurrentSession } from "../../../lib/auth";
 
 export async function POST(request: Request) {
   await deleteCurrentSession(request);
