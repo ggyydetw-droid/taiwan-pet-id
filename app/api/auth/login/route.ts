@@ -5,7 +5,7 @@ import {
   getDb,
   setSessionCookie,
   verifyPassword,
-} from "@/app/lib/auth";
+} from "../../../lib/auth";
 
 export async function POST(request: Request) {
   try {
