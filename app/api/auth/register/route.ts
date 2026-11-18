@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSession, ensureAuthSchema, getDb, hashPassword, setSessionCookie } from "@/app/lib/auth";
+import { createSession, ensureAuthSchema, getDb, hashPassword, setSessionCookie } from "../../../lib/auth";
 
 export async function POST(request: Request) {
   try {
