@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser } from "@/app/lib/auth";
+import { getAuthenticatedUser } from "../../../lib/auth";
 
 const DEMO: Record<string, { name: string; petId: string }> = {
   "900123456789012": { name: "Milo", petId: "TPID-MILO-001" },
