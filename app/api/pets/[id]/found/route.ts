@@ -44,61 +44,79 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const database = await db();
+  try {
+    const { id } = await params;
+    const database = await db();
 
-  if (!database) {
-    return NextResponse.json({ message: "D1 database binding DB is not configured." }, { status: 500 });
-  }
+    if (!database) {
+      return NextResponse.json(
+        { message: "D1 database binding DB is not configured." },
+        { status: 500 }
+      );
+    }
 
-  await ensureSchema(database);
+    await ensureSchema(database);
 
-  const pet = await database
-    .prepare("SELECT pet_id, lost FROM pets WHERE pet_id = ?")
-    .bind(id)
-    .first();
+    const pet = await database
+      .prepare("SELECT pet_id, lost FROM pets WHERE pet_id = ?")
+      .bind(id)
+      .first();
 
-  if (!pet) {
-    return NextResponse.json({ message: "Pet ID not found." }, { status: 404 });
-  }
+    if (!pet) {
+      return NextResponse.json({ message: "Pet ID not found." }, { status: 404 });
+    }
 
-  if (!pet.lost) {
-    return NextResponse.json({ message: "This pet is not currently marked as lost." }, { status: 400 });
-  }
+    if (!pet.lost) {
+      return NextResponse.json(
+        { message: "This pet is not currently marked as lost." },
+        { status: 400 }
+      );
+    }
 
-  const body = await request.json();
-  const finderName = String(body.finderName ?? "").trim();
-  const finderContact = String(body.finderContact ?? "").trim();
-  const message = String(body.message ?? "").trim();
-  const foundLocation = String(body.foundLocation ?? "").trim();
+    const body = await request.json();
+    const finderName = String(body.finderName ?? "").trim();
+    const finderContact = String(body.finderContact ?? "").trim();
+    const message = String(body.message ?? "").trim();
+    const foundLocation = String(body.foundLocation ?? "").trim();
 
-  if (!finderContact && !message) {
+    if (!finderContact && !message) {
+      return NextResponse.json(
+        { message: "Please provide a contact method or message so the owner can respond." },
+        { status: 400 }
+      );
+    }
+
+    await database
+      .prepare(
+        `INSERT INTO pet_found_reports
+          (id, pet_id, finder_name, finder_contact, message, found_location, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        crypto.randomUUID(),
+        id,
+        finderName || null,
+        finderContact || null,
+        message || null,
+        foundLocation || null,
+        new Date().toISOString()
+      )
+      .run();
+
+    return NextResponse.json({ saved: true });
+  } catch (error) {
+    console.error("Found-pet report failed:", error);
     return NextResponse.json(
-      { message: "Please provide a contact method or message so the owner can respond." },
-      { status: 400 }
+      {
+        message:
+          error instanceof Error
+            ? `Unable to save found-pet report: ${error.message}`
+            : "Unable to save found-pet report.",
+      },
+      { status: 500 }
     );
   }
-
-  await database
-    .prepare(
-      `INSERT INTO pet_found_reports
-        (id, pet_id, finder_name, finder_contact, message, found_location, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    )
-    .bind(
-      crypto.randomUUID(),
-      id,
-      finderName || null,
-      finderContact || null,
-      message || null,
-      foundLocation || null,
-      new Date().toISOString()
-    )
-    .run();
-
-  return NextResponse.json({ saved: true });
 }
-
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
