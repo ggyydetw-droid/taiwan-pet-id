@@ -20,7 +20,7 @@ export default function PublicPetPage({
 
   useEffect(() => {
     params.then(({ id }) =>
-      fetch(`/api/pets/${encodeURIComponent(id)}`)
+      fetch(`/api/pets/${encodeURIComponent(id)}?t=${Date.now()}`, { cache: "no-store" })
         .then(async (response) => {
           const data = await response.json();
           if (!response.ok) throw new Error(data.message || "Unable to load pet.");
