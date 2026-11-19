@@ -15,7 +15,8 @@ async function ensureSchema(database: any) {
       finder_name TEXT,
       finder_contact TEXT,
       message TEXT,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      read_at TEXT
     )`
   ).run();
 }
@@ -118,4 +119,49 @@ export async function GET(
     .all();
 
   return NextResponse.json({ reports: result.results ?? [] });
+}
+
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { user, database } = await getAuthenticatedUser(request);
+
+  if (!database) {
+    return NextResponse.json({ message: "D1 database binding DB is not configured." }, { status: 500 });
+  }
+
+  if (!user) {
+    return NextResponse.json({ message: "Sign in to manage found-pet reports." }, { status: 401 });
+  }
+
+  const { id } = await params;
+  await ensureSchema(database);
+
+  try {
+    await database.prepare("ALTER TABLE pet_found_reports ADD COLUMN read_at TEXT").run();
+  } catch {
+    // Column already exists.
+  }
+
+  const pet = await database
+    .prepare("SELECT owner_id FROM pets WHERE pet_id = ?")
+    .bind(id)
+    .first();
+
+  if (!pet) {
+    return NextResponse.json({ message: "Pet ID not found." }, { status: 404 });
+  }
+
+  if (pet.owner_id && pet.owner_id !== user.id) {
+    return NextResponse.json({ message: "This Pet ID belongs to another owner account." }, { status: 403 });
+  }
+
+  await database
+    .prepare("UPDATE pet_found_reports SET read_at = ? WHERE pet_id = ? AND read_at IS NULL")
+    .bind(new Date().toISOString(), id)
+    .run();
+
+  return NextResponse.json({ markedRead: true });
 }
