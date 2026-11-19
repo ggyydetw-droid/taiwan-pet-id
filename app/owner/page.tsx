@@ -27,6 +27,7 @@ export default function Owner() {
   const [saving, setSaving] = useState(false);
   const [copyLabel, setCopyLabel] = useState("Copy public link");
   const [lost, setLost] = useState(false);
+  const [foundReports, setFoundReports] = useState<any[]>([]);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -68,6 +69,11 @@ export default function Owner() {
         setCity(existing.city || "");
         setContact(existing.contact || "");
         setLost(Boolean(existing.lost));
+        const reportsResponse = await fetch(`/api/pets/${encodeURIComponent(data.petId)}/found`);
+        if (reportsResponse.ok) {
+          const reportsData = await reportsResponse.json();
+          setFoundReports(reportsData.reports || []);
+        }
       }
     }
   }
@@ -265,6 +271,36 @@ export default function Owner() {
                 {saving ? "Saving..." : lost ? "Save lost status" : "Save pet status"}
               </button>
             </section>
+
+            {foundReports.length > 0 && (
+              <section style={{ marginTop: 28 }}>
+                <h2>Found pet reports</h2>
+                <p>People who found your lost pet can send you a message here.</p>
+                {foundReports.map(report => (
+                  <div
+                    key={report.id}
+                    className="status"
+                    style={{ marginTop: 12 }}
+                  >
+                    <strong>{report.finder_name || "Someone who found your pet"}</strong>
+                    <br />
+                    {report.finder_contact && (
+                      <div style={{ marginTop: 8 }}>
+                        Contact: {report.finder_contact}
+                      </div>
+                    )}
+                    {report.message && (
+                      <div style={{ marginTop: 8 }}>
+                        Message: {report.message}
+                      </div>
+                    )}
+                    <div style={{ marginTop: 8, fontSize: 13 }}>
+                      {new Date(report.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </section>
+            )}
 
             <section style={{ marginTop: 28 }}>
               <h2>Pet ID status</h2>
