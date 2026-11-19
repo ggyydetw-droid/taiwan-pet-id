@@ -50,7 +50,7 @@ export async function GET(
 
   const row = await database
     .prepare(
-      `SELECT pet_id, name, city, contact, show_name, show_city, show_contact
+      `SELECT pet_id, name, city, contact, show_name, show_city, show_contact, lost
        FROM pets WHERE pet_id = ?`
     )
     .bind(id)
