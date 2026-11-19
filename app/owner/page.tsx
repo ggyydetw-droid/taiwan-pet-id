@@ -28,6 +28,8 @@ export default function Owner() {
   const [copyLabel, setCopyLabel] = useState("Copy public link");
   const [lost, setLost] = useState(false);
   const [foundReports, setFoundReports] = useState<any[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [reportsRead, setReportsRead] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -69,11 +71,14 @@ export default function Owner() {
         setCity(existing.city || "");
         setContact(existing.contact || "");
         setLost(Boolean(existing.lost));
-        const reportsResponse = await fetch(`/api/pets/${encodeURIComponent(data.petId)}/found`);
+        setReportsLoading(true);
+        const reportsResponse = await fetch(`/api/pets/${encodeURIComponent(data.petId)}/found`, { cache: "no-store" });
         if (reportsResponse.ok) {
           const reportsData = await reportsResponse.json();
           setFoundReports(reportsData.reports || []);
+          setReportsRead((reportsData.reports || []).every((report: any) => Boolean(report.read_at)));
         }
+        setReportsLoading(false);
       }
     }
   }
@@ -272,35 +277,71 @@ export default function Owner() {
               </button>
             </section>
 
-            {foundReports.length > 0 && (
-              <section style={{ marginTop: 28 }}>
-                <h2>Found pet reports</h2>
-                <p>People who found your lost pet can send you a message here.</p>
-                {foundReports.map(report => (
-                  <div
-                    key={report.id}
-                    className="status"
-                    style={{ marginTop: 12 }}
-                  >
-                    <strong>{report.finder_name || "Someone who found your pet"}</strong>
-                    <br />
-                    {report.finder_contact && (
-                      <div style={{ marginTop: 8 }}>
-                        Contact: {report.finder_contact}
+            <section style={{ marginTop: 28 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                <div>
+                  <h2 style={{ marginBottom: 4 }}>Found pet reports</h2>
+                  <p style={{ marginTop: 0 }}>People who found your lost pet can send you a message here.</p>
+                </div>
+                {foundReports.some(report => !report.read_at) && (
+                  <span className="status warning" style={{ fontWeight: 800 }}>
+                    🔔 {foundReports.filter(report => !report.read_at).length} new
+                  </span>
+                )}
+              </div>
+
+              {reportsLoading ? (
+                <p>Loading reports…</p>
+              ) : foundReports.length === 0 ? (
+                <div className="status">No found-pet reports yet.</div>
+              ) : (
+                <>
+                  {foundReports.map(report => (
+                    <div
+                      key={report.id}
+                      className="status"
+                      style={{ marginTop: 12 }}
+                    >
+                      <strong>{report.finder_name || "Someone who found your pet"}</strong>
+                      {!report.read_at && (
+                        <span style={{ marginLeft: 8, fontWeight: 800 }}>NEW</span>
+                      )}
+                      {report.finder_contact && (
+                        <div style={{ marginTop: 8 }}>
+                          Contact: {report.finder_contact}
+                        </div>
+                      )}
+                      {report.message && (
+                        <div style={{ marginTop: 8 }}>
+                          Message: {report.message}
+                        </div>
+                      )}
+                      <div style={{ marginTop: 8, fontSize: 13 }}>
+                        {new Date(report.created_at).toLocaleString()}
                       </div>
-                    )}
-                    {report.message && (
-                      <div style={{ marginTop: 8 }}>
-                        Message: {report.message}
-                      </div>
-                    )}
-                    <div style={{ marginTop: 8, fontSize: 13 }}>
-                      {new Date(report.created_at).toLocaleString()}
                     </div>
-                  </div>
-                ))}
-              </section>
-            )}
+                  ))}
+                  {!reportsRead && (
+                    <button
+                      className="button"
+                      style={{ marginTop: 12 }}
+                      onClick={async () => {
+                        if (!result?.petId) return;
+                        const response = await fetch(`/api/pets/${encodeURIComponent(result.petId)}/found`, {
+                          method: "PATCH",
+                        });
+                        if (response.ok) {
+                          setFoundReports(reports => reports.map(report => ({ ...report, read_at: report.read_at || new Date().toISOString() })));
+                          setReportsRead(true);
+                        }
+                      }}
+                    >
+                      Mark reports as read
+                    </button>
+                  )}
+                </>
+              )}
+            </section>
 
             <section style={{ marginTop: 28 }}>
               <h2>Pet ID status</h2>
