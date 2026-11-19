@@ -17,6 +17,13 @@ export default function PublicPetPage({
 }) {
   const [pet, setPet] = useState<PublicPet | null>(null);
   const [error, setError] = useState("");
+  const [showFoundForm, setShowFoundForm] = useState(false);
+  const [finderName, setFinderName] = useState("");
+  const [finderContact, setFinderContact] = useState("");
+  const [finderMessage, setFinderMessage] = useState("");
+  const [foundSaving, setFoundSaving] = useState(false);
+  const [foundSaved, setFoundSaved] = useState(false);
+  const [foundError, setFoundError] = useState("");
 
   useEffect(() => {
     params.then(({ id }) =>
@@ -58,6 +65,74 @@ export default function PublicPetPage({
                 <br />
                 This pet has been reported lost. If you found this pet, please contact the owner.
               </div>
+            )}
+
+            {pet.lost && (
+              <section style={{ marginTop: 20 }}>
+                <button
+                  className="button"
+                  onClick={() => setShowFoundForm(value => !value)}
+                >
+                  {showFoundForm ? "Close found-pet form" : "🐾 I found this pet"}
+                </button>
+
+                {showFoundForm && (
+                  <div className="status" style={{ marginTop: 12 }}>
+                    <h2>Help reunite this pet</h2>
+                    <p>
+                      Send the owner a message. Your contact details are only shared with the owner.
+                    </p>
+
+                    <div className="field">
+                      <label>Your name (optional)</label>
+                      <input
+                        value={finderName}
+                        onChange={e => setFinderName(e.target.value)}
+                        placeholder="Your name"
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label>Your phone or email</label>
+                      <input
+                        value={finderContact}
+                        onChange={e => setFinderContact(e.target.value)}
+                        placeholder="How can the owner contact you?"
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label>Message</label>
+                      <textarea
+                        value={finderMessage}
+                        onChange={e => setFinderMessage(e.target.value)}
+                        placeholder="I found Milo near Taoyuan station..."
+                        rows={4}
+                      />
+                    </div>
+
+                    <button
+                      className="button"
+                      onClick={reportFound}
+                      disabled={foundSaving}
+                    >
+                      {foundSaving ? "Sending..." : "Send to owner"}
+                    </button>
+
+                    {foundSaved && (
+                      <div className="status" style={{ marginTop: 12 }}>
+                        Thank you. Your report was sent to the pet owner.
+                      </div>
+                    )}
+
+                    {foundError && (
+                      <div className="status warning" style={{ marginTop: 12 }}>
+                        {foundError}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
             )}
 
             <div className="status">
