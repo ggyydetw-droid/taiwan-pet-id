@@ -37,6 +37,43 @@ export default function PublicPetPage({
     );
   }, [params]);
 
+  async function reportFound() {
+    setFoundSaving(true);
+    setFoundSaved(false);
+    setFoundError("");
+
+    try {
+      const { id } = await params;
+      const response = await fetch(
+        `/api/pets/${encodeURIComponent(id)}/found`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            finderName,
+            finderContact,
+            message: finderMessage,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to send report.");
+      }
+
+      setFoundSaved(true);
+      setFinderMessage("");
+    } catch (err) {
+      setFoundError(
+        err instanceof Error ? err.message : "Unable to send report."
+      );
+    } finally {
+      setFoundSaving(false);
+    }
+  }
+
   return (
     <main className="page">
       <div className="card">
