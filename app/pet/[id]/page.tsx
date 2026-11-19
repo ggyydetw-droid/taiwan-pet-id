@@ -21,6 +21,7 @@ export default function PublicPetPage({
   const [finderName, setFinderName] = useState("");
   const [finderContact, setFinderContact] = useState("");
   const [finderMessage, setFinderMessage] = useState("");
+  const [foundLocation, setFoundLocation] = useState("");
   const [foundSaving, setFoundSaving] = useState(false);
   const [foundSaved, setFoundSaved] = useState(false);
   const [foundError, setFoundError] = useState("");
@@ -53,6 +54,7 @@ export default function PublicPetPage({
             finderName,
             finderContact,
             message: finderMessage,
+            foundLocation,
           }),
         }
       );
@@ -135,6 +137,15 @@ export default function PublicPetPage({
                         value={finderContact}
                         onChange={e => setFinderContact(e.target.value)}
                         placeholder="How can the owner contact you?"
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label>Where did you find the pet? (optional)</label>
+                      <input
+                        value={foundLocation}
+                        onChange={e => setFoundLocation(e.target.value)}
+                        placeholder="Taoyuan Station, Taoyuan"
                       />
                     </div>
 
