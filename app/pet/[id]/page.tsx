@@ -60,10 +60,21 @@ export default function PublicPetPage({
         }
       );
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: { message?: string; saved?: boolean } = {};
+
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          throw new Error(
+            `The server returned an invalid response (HTTP ${response.status}). Please try again after the deployment finishes.`
+          );
+        }
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || "Unable to send report.");
+        throw new Error(data.message || `Unable to send report (HTTP ${response.status}).`);
       }
 
       setFoundSaved(true);
