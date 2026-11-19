@@ -149,7 +149,7 @@ export async function GET(
 
   const result = await database
     .prepare(
-      `SELECT id, finder_name, finder_contact, message, found_location, created_at
+      `SELECT id, finder_name, finder_contact, message, found_location, created_at, read_at
        FROM pet_found_reports
        WHERE pet_id = ?
        ORDER BY created_at DESC`
