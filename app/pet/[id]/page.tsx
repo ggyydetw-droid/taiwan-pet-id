@@ -22,6 +22,7 @@ export default function PublicPetPage({
   const [finderContact, setFinderContact] = useState("");
   const [finderMessage, setFinderMessage] = useState("");
   const [foundLocation, setFoundLocation] = useState("");
+  const [locating, setLocating] = useState(false);
   const [foundSaving, setFoundSaving] = useState(false);
   const [foundSaved, setFoundSaved] = useState(false);
   const [foundError, setFoundError] = useState("");
@@ -145,8 +146,47 @@ export default function PublicPetPage({
                       <input
                         value={foundLocation}
                         onChange={e => setFoundLocation(e.target.value)}
-                        placeholder="Taoyuan Station, Taoyuan"
+                        placeholder="Enter a place or address"
                       />
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                        <button
+                          type="button"
+                          className="button"
+                          disabled={locating}
+                          onClick={() => {
+                            if (!navigator.geolocation) {
+                              setFoundError("Location is not supported on this device.");
+                              return;
+                            }
+                            setLocating(true);
+                            navigator.geolocation.getCurrentPosition(
+                              position => {
+                                setFoundLocation(
+                                  `Location: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`
+                                );
+                                setLocating(false);
+                              },
+                              () => {
+                                setFoundError("Unable to get your location. You can enter the place manually.");
+                                setLocating(false);
+                              },
+                              { enableHighAccuracy: true, timeout: 10000 }
+                            );
+                          }}
+                        >
+                          {locating ? "Getting location..." : "📍 Use my current location"}
+                        </button>
+                        <button
+                          type="button"
+                          className="button"
+                          onClick={() => setFoundLocation("")}
+                        >
+                          Clear location
+                        </button>
+                      </div>
+                      <p style={{ fontSize: 13, marginTop: 8 }}>
+                        You can type a place/address or use your device location.
+                      </p>
                     </div>
 
                     <div className="field">
