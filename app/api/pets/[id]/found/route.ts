@@ -20,6 +20,24 @@ async function ensureSchema(database: any) {
       read_at TEXT
     )`
   ).run();
+
+  // Existing D1 databases may have been created before found_location was added.
+  // Upgrade those databases in place so the INSERT/SELECT below works.
+  try {
+    await database.prepare(
+      "ALTER TABLE pet_found_reports ADD COLUMN found_location TEXT"
+    ).run();
+  } catch {
+    // Column already exists.
+  }
+
+  try {
+    await database.prepare(
+      "ALTER TABLE pet_found_reports ADD COLUMN read_at TEXT"
+    ).run();
+  } catch {
+    // Column already exists.
+  }
 }
 
 export async function POST(
