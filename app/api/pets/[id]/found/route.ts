@@ -15,6 +15,7 @@ async function ensureSchema(database: any) {
       finder_name TEXT,
       finder_contact TEXT,
       message TEXT,
+      found_location TEXT,
       created_at TEXT NOT NULL,
       read_at TEXT
     )`
@@ -51,6 +52,7 @@ export async function POST(
   const finderName = String(body.finderName ?? "").trim();
   const finderContact = String(body.finderContact ?? "").trim();
   const message = String(body.message ?? "").trim();
+  const foundLocation = String(body.foundLocation ?? "").trim();
 
   if (!finderContact && !message) {
     return NextResponse.json(
@@ -62,8 +64,8 @@ export async function POST(
   await database
     .prepare(
       `INSERT INTO pet_found_reports
-        (id, pet_id, finder_name, finder_contact, message, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
+        (id, pet_id, finder_name, finder_contact, message, found_location, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       crypto.randomUUID(),
@@ -71,6 +73,7 @@ export async function POST(
       finderName || null,
       finderContact || null,
       message || null,
+      foundLocation || null,
       new Date().toISOString()
     )
     .run();
@@ -110,7 +113,7 @@ export async function GET(
 
   const result = await database
     .prepare(
-      `SELECT id, finder_name, finder_contact, message, created_at
+      `SELECT id, finder_name, finder_contact, message, found_location, created_at
        FROM pet_found_reports
        WHERE pet_id = ?
        ORDER BY created_at DESC`
