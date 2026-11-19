@@ -316,6 +316,11 @@ export default function Owner() {
                           Message: {report.message}
                         </div>
                       )}
+                      {report.found_location && (
+                        <div style={{ marginTop: 8 }}>
+                          📍 Found at: {report.found_location}
+                        </div>
+                      )}
                       <div style={{ marginTop: 8, fontSize: 13 }}>
                         {new Date(report.created_at).toLocaleString()}
                       </div>
