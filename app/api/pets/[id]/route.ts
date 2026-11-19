@@ -66,7 +66,7 @@ export async function GET(
     ...(row.show_name ? { name: row.name } : {}),
     ...(row.show_city && row.city ? { city: row.city } : {}),
     ...(row.show_contact && row.contact ? { contact: row.contact } : {}),
-  });
+  }, { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } });
 }
 
 export async function POST(
