@@ -241,11 +241,8 @@ export default function PublicPetPage({
             {pet.photoUrl && (
               <section style={{ marginTop: 20, textAlign: "center" }}>
                 <img
-                  src={`/api/pets/${encodeURIComponent(pet.petId)}/photo`}
+                  src={pet.photoUrl}
                   alt={pet.name ? `${pet.name} photo` : "Pet photo"}
-                  onError={(event) => {
-                    event.currentTarget.style.display = "none";
-                  }}
                   style={{
                     width: "100%",
                     maxWidth: 360,
