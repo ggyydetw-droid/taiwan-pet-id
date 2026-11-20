@@ -72,7 +72,7 @@ export default function Owner() {
         setContact(existing.contact || "");
         setLost(Boolean(existing.lost));
         setReportsLoading(true);
-        const reportsResponse = await fetch(`/api/pets/${encodeURIComponent(data.petId)}/found`, { cache: "no-store" });
+        const reportsResponse = await fetch(`/api/pets/${encodeURIComponent(data.petId)}/found?t=${Date.now()}`, { cache: "no-store" });
         if (reportsResponse.ok) {
           const reportsData = await reportsResponse.json();
           setFoundReports(reportsData.reports || []);
