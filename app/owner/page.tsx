@@ -21,6 +21,12 @@ export default function Owner() {
   const [showName, setShowName] = useState(true);
   const [showCity, setShowCity] = useState(false);
   const [showContact, setShowContact] = useState(false);
+  const [showSpecies, setShowSpecies] = useState(false);
+  const [showBreed, setShowBreed] = useState(false);
+  const [showBirthDate, setShowBirthDate] = useState(false);
+  const [species, setSpecies] = useState("");
+  const [breed, setBreed] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [city, setCity] = useState("");
   const [contact, setContact] = useState("");
   const [saved, setSaved] = useState(false);
@@ -68,6 +74,12 @@ export default function Owner() {
         setShowName(Boolean(existing.name));
         setShowCity(Boolean(existing.city));
         setShowContact(Boolean(existing.contact));
+        setShowSpecies(Boolean(existing.species));
+        setShowBreed(Boolean(existing.breed));
+        setShowBirthDate(Boolean(existing.birthDate));
+        setSpecies(existing.species || "");
+        setBreed(existing.breed || "");
+        setBirthDate(existing.birthDate || "");
         setCity(existing.city || "");
         setContact(existing.contact || "");
         setLost(Boolean(existing.lost));
@@ -104,6 +116,12 @@ export default function Owner() {
         showName,
         showCity,
         showContact,
+        species,
+        breed,
+        birthDate,
+        showSpecies,
+        showBreed,
+        showBirthDate,
         lost,
       }),
     });
@@ -220,6 +238,28 @@ export default function Owner() {
                   />
                 </div>
               )}
+
+              <section style={{ marginTop: 24 }}>
+                <h2>Pet details</h2>
+                <p>Optional details that can help identify your pet.</p>
+                <div className="field">
+                  <label>Species</label>
+                  <input value={species} onChange={e => setSpecies(e.target.value)} placeholder="Dog" />
+                </div>
+                <div className="field">
+                  <label>Breed</label>
+                  <input value={breed} onChange={e => setBreed(e.target.value)} placeholder="Golden Retriever" />
+                </div>
+                <div className="field">
+                  <label>Birth date</label>
+                  <input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label><input type="checkbox" checked={showSpecies} onChange={e => setShowSpecies(e.target.checked)} /> Show species publicly</label>
+                  <label><input type="checkbox" checked={showBreed} onChange={e => setShowBreed(e.target.checked)} /> Show breed publicly</label>
+                  <label><input type="checkbox" checked={showBirthDate} onChange={e => setShowBirthDate(e.target.checked)} /> Show birth date publicly</label>
+                </div>
+              </section>
 
               <button className="button" onClick={savePublicProfile} disabled={saving} style={{ marginTop: 12 }}>
                 {saving ? "Saving..." : "Save public profile"}
