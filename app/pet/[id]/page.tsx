@@ -10,6 +10,7 @@ type PublicPet = {
   species?: string;
   breed?: string;
   birthDate?: string;
+  photoUrl?: string;
   lost?: boolean;
 };
 
@@ -234,6 +235,23 @@ export default function PublicPetPage({
                     )}
                   </div>
                 )}
+              </section>
+            )}
+
+            {pet.photoUrl && (
+              <section style={{ marginTop: 20, textAlign: "center" }}>
+                <img
+                  src={pet.photoUrl}
+                  alt={pet.name ? `${pet.name} photo` : "Pet photo"}
+                  style={{
+                    width: "100%",
+                    maxWidth: 360,
+                    maxHeight: 360,
+                    objectFit: "cover",
+                    borderRadius: 16,
+                    border: "1px solid #ddd",
+                  }}
+                />
               </section>
             )}
 
