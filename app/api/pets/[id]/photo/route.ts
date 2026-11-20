@@ -7,13 +7,18 @@ async function getBucket() {
   return (env as any).PET_PHOTOS;
 }
 
+async function jsonError(message: string, status = 500) {
+  return NextResponse.json({ message }, { status });
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { user, database } = await getAuthenticatedUser(request);
+  try {
+    const { user, database } = await getAuthenticatedUser(request);
 
-  if (!database) {
+    if (!database) {
     return NextResponse.json(
       { message: "D1 database binding DB is not configured." },
       { status: 500 }
@@ -99,7 +104,13 @@ export async function POST(
     .bind(photoUrl, new Date().toISOString(), id)
     .run();
 
-  return NextResponse.json({ uploaded: true, photoUrl });
+    return NextResponse.json({ uploaded: true, photoUrl });
+  } catch (error) {
+    console.error("Pet photo upload failed:", error);
+    const message =
+      error instanceof Error ? error.message : "Unable to upload pet photo.";
+    return jsonError(message, 500);
+  }
 }
 
 export async function GET(
