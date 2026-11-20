@@ -46,6 +46,19 @@ async function ensureSchema(database: any) {
       created_at TEXT NOT NULL
     )`
   ).run();
+
+  // Keep the clinic endpoint compatible with the current pet profile schema.
+  for (const column of [
+    "owner_id TEXT",
+    "show_name INTEGER NOT NULL DEFAULT 1",
+    "updated_at TEXT",
+  ]) {
+    try {
+      await database.prepare("ALTER TABLE pets ADD COLUMN " + column).run();
+    } catch {
+      // Column already exists.
+    }
+  }
 }
 
 export async function POST(request: Request) {
@@ -120,8 +133,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ saved: true, petId });
   } catch (error) {
     console.error("Clinic visit record error:", error);
+    const detail = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { message: "Could not save the visit record. Please try again." },
+      { message: `Could not save the visit record. ${detail}` },
       { status: 500 }
     );
   }
