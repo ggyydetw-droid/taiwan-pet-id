@@ -24,6 +24,8 @@ async function ensureSchema(database: any) {
       show_species INTEGER NOT NULL DEFAULT 0,
       show_breed INTEGER NOT NULL DEFAULT 0,
       show_birth_date INTEGER NOT NULL DEFAULT 0,
+      photo_url TEXT,
+      show_photo INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL
     )`
   ).run();
@@ -47,6 +49,8 @@ async function ensureSchema(database: any) {
     "show_species INTEGER NOT NULL DEFAULT 0",
     "show_breed INTEGER NOT NULL DEFAULT 0",
     "show_birth_date INTEGER NOT NULL DEFAULT 0",
+    "photo_url TEXT",
+    "show_photo INTEGER NOT NULL DEFAULT 0",
   ]) {
     try {
       await database.prepare("ALTER TABLE pets ADD COLUMN " + column).run();
@@ -71,7 +75,7 @@ export async function GET(
 
   const row = await database
     .prepare(
-      `SELECT pet_id, name, city, contact, show_name, show_city, show_contact, lost, species, breed, birth_date, show_species, show_breed, show_birth_date
+      `SELECT pet_id, name, city, contact, show_name, show_city, show_contact, lost, species, breed, birth_date, show_species, show_breed, show_birth_date, photo_url, show_photo
        FROM pets WHERE pet_id = ?`
     )
     .bind(id)
@@ -90,6 +94,8 @@ export async function GET(
     showSpecies: Boolean(row.show_species),
     showBreed: Boolean(row.show_breed),
     showBirthDate: Boolean(row.show_birth_date),
+    showPhoto: Boolean(row.show_photo),
+    ...(row.show_photo && row.photo_url ? { photoUrl: row.photo_url } : {}),
     ...(row.show_species && row.species ? { species: row.species } : {}),
     ...(row.show_breed && row.breed ? { breed: row.breed } : {}),
     ...(row.show_birth_date && row.birth_date ? { birthDate: row.birth_date } : {}),
@@ -144,12 +150,14 @@ export async function POST(
   const showSpecies = body.showSpecies ? 1 : 0;
   const showBreed = body.showBreed ? 1 : 0;
   const showBirthDate = body.showBirthDate ? 1 : 0;
+  const photoUrl = String(body.photoUrl ?? "").trim();
+  const showPhoto = body.showPhoto ? 1 : 0;
 
   await database
     .prepare(
       `INSERT INTO pets
-        (pet_id, owner_id, name, city, contact, show_name, show_city, show_contact, lost, species, breed, birth_date, show_species, show_breed, show_birth_date, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (pet_id, owner_id, name, city, contact, show_name, show_city, show_contact, lost, species, breed, birth_date, show_species, show_breed, show_birth_date, photo_url, show_photo, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(pet_id) DO UPDATE SET
         owner_id = excluded.owner_id,
         name = excluded.name,
@@ -165,6 +173,8 @@ export async function POST(
         show_species = excluded.show_species,
         show_breed = excluded.show_breed,
         show_birth_date = excluded.show_birth_date,
+        photo_url = excluded.photo_url,
+        show_photo = excluded.show_photo,
         updated_at = excluded.updated_at`
     )
     .bind(
@@ -183,6 +193,8 @@ export async function POST(
       showSpecies,
       showBreed,
       showBirthDate,
+      photoUrl || null,
+      showPhoto,
       new Date().toISOString()
     )
     .run();
