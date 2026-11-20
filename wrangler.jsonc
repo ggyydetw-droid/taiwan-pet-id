@@ -10,11 +10,4 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  },
-  "r2_buckets": [
-    {
-      "binding": "PET_PHOTOS",
-      "bucket_name": "taiwan-pet-id-photos"
-    }
-  ]
-}
+  }}
