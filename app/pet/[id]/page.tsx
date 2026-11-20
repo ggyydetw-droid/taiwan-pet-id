@@ -7,6 +7,9 @@ type PublicPet = {
   name?: string;
   city?: string;
   contact?: string;
+  species?: string;
+  breed?: string;
+  birthDate?: string;
   lost?: boolean;
 };
 
@@ -251,6 +254,15 @@ export default function PublicPetPage({
               <section style={{ marginTop: 16 }}>
                 <h2>City</h2>
                 <p>{pet.city}</p>
+              </section>
+            )}
+
+            {(pet.species || pet.breed || pet.birthDate) && (
+              <section style={{ marginTop: 16 }}>
+                <h2>Pet details</h2>
+                {pet.species && <p><strong>Species:</strong> {pet.species}</p>}
+                {pet.breed && <p><strong>Breed:</strong> {pet.breed}</p>}
+                {pet.birthDate && <p><strong>Birth date:</strong> {pet.birthDate}</p>}
               </section>
             )}
 
