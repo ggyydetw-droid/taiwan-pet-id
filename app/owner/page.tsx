@@ -38,6 +38,13 @@ export default function Owner() {
   const [foundReports, setFoundReports] = useState<any[]>([]);
   const [reportsLoading, setReportsLoading] = useState(false);
   const [reportsRead, setReportsRead] = useState(false);
+  const [healthRecords, setHealthRecords] = useState<any[]>([]);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [healthType, setHealthType] = useState("Vaccination");
+  const [healthSummary, setHealthSummary] = useState("");
+  const [healthDate, setHealthDate] = useState("");
+  const [healthPublic, setHealthPublic] = useState(false);
+  const [healthSaving, setHealthSaving] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -95,6 +102,13 @@ export default function Owner() {
           setReportsRead((reportsData.reports || []).every((report: any) => Boolean(report.read_at)));
         }
         setReportsLoading(false);
+        setHealthLoading(true);
+        const healthResponse = await fetch(`/api/pets/${encodeURIComponent(data.petId)}/health?t=${Date.now()}`, { cache: "no-store" });
+        if (healthResponse.ok) {
+          const healthData = await healthResponse.json();
+          setHealthRecords(healthData.records || []);
+        }
+        setHealthLoading(false);
       }
     }
   }
@@ -437,6 +451,128 @@ export default function Owner() {
                     </button>
                   )}
                 </>
+              )}
+            </section>
+
+            <section style={{ marginTop: 28 }}>
+              <h2>Health records</h2>
+              <p>Add vaccinations, vet visits, medications, or other useful medical history.</p>
+
+              <div className="field">
+                <label>Record type</label>
+                <select value={healthType} onChange={e => setHealthType(e.target.value)}>
+                  <option>Vaccination</option>
+                  <option>Vet visit</option>
+                  <option>Medication</option>
+                  <option>Procedure</option>
+                  <option>Allergy</option>
+                  <option>Other</option>
+                </select>
+              </div>
+
+              <div className="field">
+                <label>Date</label>
+                <input type="date" value={healthDate} onChange={e => setHealthDate(e.target.value)} />
+              </div>
+
+              <div className="field">
+                <label>Summary</label>
+                <textarea
+                  value={healthSummary}
+                  onChange={e => setHealthSummary(e.target.value)}
+                  placeholder="Rabies vaccination, next due 2027-05-20"
+                  rows={3}
+                />
+              </div>
+
+              <label>
+                <input type="checkbox" checked={healthPublic} onChange={e => setHealthPublic(e.target.checked)} />{" "}
+                Show this record publicly
+              </label>
+
+              <button
+                className="button"
+                style={{ marginTop: 12 }}
+                disabled={healthSaving}
+                onClick={async () => {
+                  if (!result?.petId) return;
+                  if (!healthDate || !healthSummary.trim()) return;
+                  setHealthSaving(true);
+                  const response = await fetch(`/api/pets/${encodeURIComponent(result.petId)}/health`, {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                      recordType: healthType,
+                      summary: healthSummary,
+                      occurredAt: healthDate,
+                      showPublic: healthPublic,
+                    }),
+                  });
+                  setHealthSaving(false);
+                  if (response.ok) {
+                    const refreshed = await fetch(`/api/pets/${encodeURIComponent(result.petId)}/health?t=${Date.now()}`, { cache: "no-store" });
+                    if (refreshed.ok) {
+                      const data = await refreshed.json();
+                      setHealthRecords(data.records || []);
+                    }
+                    setHealthSummary("");
+                    setHealthDate("");
+                    setHealthPublic(false);
+                  }
+                }}
+              >
+                {healthSaving ? "Saving..." : "Add health record"}
+              </button>
+
+              {healthLoading ? (
+                <p>Loading health records…</p>
+              ) : healthRecords.length === 0 ? (
+                <div className="status" style={{ marginTop: 12 }}>No health records yet.</div>
+              ) : (
+                healthRecords.map(record => (
+                  <div className="status" key={record.id} style={{ marginTop: 12 }}>
+                    <strong>{record.record_type}</strong>
+                    <div>{record.occurred_at}</div>
+                    <div style={{ marginTop: 6 }}>{record.summary}</div>
+                    <div style={{ marginTop: 6, fontSize: 13 }}>
+                      {record.show_public ? "Public" : "Private"}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                      <button
+                        className="button"
+                        onClick={async () => {
+                          if (!result?.petId) return;
+                          await fetch(`/api/pets/${encodeURIComponent(result.petId)}/health`, {
+                            method: "PATCH",
+                            headers: { "content-type": "application/json" },
+                            body: JSON.stringify({ recordId: record.id, showPublic: !Boolean(record.show_public) }),
+                          });
+                          const refreshed = await fetch(`/api/pets/${encodeURIComponent(result.petId)}/health?t=${Date.now()}`, { cache: "no-store" });
+                          if (refreshed.ok) {
+                            const data = await refreshed.json();
+                            setHealthRecords(data.records || []);
+                          }
+                        }}
+                      >
+                        {record.show_public ? "Make private" : "Show publicly"}
+                      </button>
+                      <button
+                        className="button"
+                        onClick={async () => {
+                          if (!result?.petId || !window.confirm("Delete this health record?")) return;
+                          const response = await fetch(`/api/pets/${encodeURIComponent(result.petId)}/health`, {
+                            method: "DELETE",
+                            headers: { "content-type": "application/json" },
+                            body: JSON.stringify({ recordId: record.id }),
+                          });
+                          if (response.ok) setHealthRecords(records => records.filter(item => item.id !== record.id));
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
               )}
             </section>
 
