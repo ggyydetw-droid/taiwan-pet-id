@@ -34,23 +34,47 @@ export default function PublicPetPage({
   const [healthRecords, setHealthRecords] = useState<PublicPet["healthRecords"]>([]);
 
   useEffect(() => {
-    params.then(({ id }) =>
-      fetch(`/api/pets/${encodeURIComponent(id)}?t=${Date.now()}`, { cache: "no-store" })
-        .then(async (response) => {
-          const data = await response.json();
-          if (!response.ok) throw new Error(data.message || "Unable to load pet.");
-          setPet(data);
-        })
-        .then(async (data) => {
-          setPet(data);
-          const healthResponse = await fetch(`/api/pets/${encodeURIComponent(id)}/health?t=${Date.now()}`, { cache: "no-store" });
-          if (healthResponse.ok) {
-            const healthData = await healthResponse.json();
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const { id } = await params;
+        const response = await fetch(
+          `/api/pets/${encodeURIComponent(id)}?t=${Date.now()}`,
+          { cache: "no-store" }
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Unable to load pet.");
+        }
+
+        if (cancelled) return;
+        setPet(data);
+
+        const healthResponse = await fetch(
+          `/api/pets/${encodeURIComponent(id)}/health?t=${Date.now()}`,
+          { cache: "no-store" }
+        );
+
+        if (healthResponse.ok) {
+          const healthData = await healthResponse.json();
+          if (!cancelled) {
             setHealthRecords(healthData.records || []);
           }
-        })
-        .catch((err) => setError(err.message))
-    );
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Unable to load pet.");
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
   }, [params]);
 
   async function reportFound() {
