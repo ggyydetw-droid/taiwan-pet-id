@@ -84,6 +84,12 @@ export async function GET(
   return NextResponse.json({
     petId: row.pet_id,
     lost: Boolean(row.lost),
+    showName: Boolean(row.show_name),
+    showCity: Boolean(row.show_city),
+    showContact: Boolean(row.show_contact),
+    showSpecies: Boolean(row.show_species),
+    showBreed: Boolean(row.show_breed),
+    showBirthDate: Boolean(row.show_birth_date),
     ...(row.show_species && row.species ? { species: row.species } : {}),
     ...(row.show_breed && row.breed ? { breed: row.breed } : {}),
     ...(row.show_birth_date && row.birth_date ? { birthDate: row.birth_date } : {}),
