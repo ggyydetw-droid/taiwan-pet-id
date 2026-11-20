@@ -46,6 +46,14 @@ async function ensureSchema(database: any) {
       created_at TEXT NOT NULL
     )`
   ).run();
+  
+  // Existing installations may have the older health-record table without
+  // the public-visibility column. Add it without replacing existing data.
+  try {
+    await database.prepare("ALTER TABLE pet_health_records ADD COLUMN show_public INTEGER NOT NULL DEFAULT 0").run();
+  } catch {
+    // Column already exists.
+  }
 }
 
 export async function GET(
