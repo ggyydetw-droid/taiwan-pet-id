@@ -18,6 +18,12 @@ async function ensureSchema(database: any) {
       show_city INTEGER NOT NULL DEFAULT 0,
       show_contact INTEGER NOT NULL DEFAULT 0,
       lost INTEGER NOT NULL DEFAULT 0,
+      species TEXT,
+      breed TEXT,
+      birth_date TEXT,
+      show_species INTEGER NOT NULL DEFAULT 0,
+      show_breed INTEGER NOT NULL DEFAULT 0,
+      show_birth_date INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL
     )`
   ).run();
@@ -32,6 +38,21 @@ async function ensureSchema(database: any) {
     await database.prepare("ALTER TABLE pets ADD COLUMN lost INTEGER NOT NULL DEFAULT 0").run();
   } catch {
     // Column already exists.
+  }
+
+  for (const column of [
+    "species TEXT",
+    "breed TEXT",
+    "birth_date TEXT",
+    "show_species INTEGER NOT NULL DEFAULT 0",
+    "show_breed INTEGER NOT NULL DEFAULT 0",
+    "show_birth_date INTEGER NOT NULL DEFAULT 0",
+  ]) {
+    try {
+      await database.prepare("ALTER TABLE pets ADD COLUMN " + column).run();
+    } catch {
+      // Column already exists.
+    }
   }
 }
 
@@ -50,7 +71,7 @@ export async function GET(
 
   const row = await database
     .prepare(
-      `SELECT pet_id, name, city, contact, show_name, show_city, show_contact, lost
+      `SELECT pet_id, name, city, contact, show_name, show_city, show_contact, lost, species, breed, birth_date, show_species, show_breed, show_birth_date
        FROM pets WHERE pet_id = ?`
     )
     .bind(id)
@@ -63,6 +84,9 @@ export async function GET(
   return NextResponse.json({
     petId: row.pet_id,
     lost: Boolean(row.lost),
+    ...(row.show_species && row.species ? { species: row.species } : {}),
+    ...(row.show_breed && row.breed ? { breed: row.breed } : {}),
+    ...(row.show_birth_date && row.birth_date ? { birthDate: row.birth_date } : {}),
     ...(row.show_name ? { name: row.name } : {}),
     ...(row.show_city && row.city ? { city: row.city } : {}),
     ...(row.show_contact && row.contact ? { contact: row.contact } : {}),
@@ -108,12 +132,18 @@ export async function POST(
   const showCity = body.showCity ? 1 : 0;
   const showContact = body.showContact ? 1 : 0;
   const lost = body.lost ? 1 : 0;
+  const species = String(body.species ?? '').trim();
+  const breed = String(body.breed ?? '').trim();
+  const birthDate = String(body.birthDate ?? '').trim();
+  const showSpecies = body.showSpecies ? 1 : 0;
+  const showBreed = body.showBreed ? 1 : 0;
+  const showBirthDate = body.showBirthDate ? 1 : 0;
 
   await database
     .prepare(
       `INSERT INTO pets
-        (pet_id, owner_id, name, city, contact, show_name, show_city, show_contact, lost, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (pet_id, owner_id, name, city, contact, show_name, show_city, show_contact, lost, species, breed, birth_date, show_species, show_breed, show_birth_date, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(pet_id) DO UPDATE SET
         owner_id = excluded.owner_id,
         name = excluded.name,
@@ -123,6 +153,12 @@ export async function POST(
         show_city = excluded.show_city,
         show_contact = excluded.show_contact,
         lost = excluded.lost,
+        species = excluded.species,
+        breed = excluded.breed,
+        birth_date = excluded.birth_date,
+        show_species = excluded.show_species,
+        show_breed = excluded.show_breed,
+        show_birth_date = excluded.show_birth_date,
         updated_at = excluded.updated_at`
     )
     .bind(
@@ -135,6 +171,12 @@ export async function POST(
       showCity,
       showContact,
       lost,
+      species || null,
+      breed || null,
+      birthDate || null,
+      showSpecies,
+      showBreed,
+      showBirthDate,
       new Date().toISOString()
     )
     .run();
