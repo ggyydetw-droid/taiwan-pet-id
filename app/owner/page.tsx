@@ -71,12 +71,12 @@ export default function Owner() {
       const profile = await fetch(`/api/pets/${encodeURIComponent(data.petId)}`);
       if (profile.ok) {
         const existing = await profile.json();
-        setShowName(Boolean(existing.name));
-        setShowCity(Boolean(existing.city));
-        setShowContact(Boolean(existing.contact));
-        setShowSpecies(Boolean(existing.species));
-        setShowBreed(Boolean(existing.breed));
-        setShowBirthDate(Boolean(existing.birthDate));
+        setShowName(Boolean(existing.showName));
+        setShowCity(Boolean(existing.showCity));
+        setShowContact(Boolean(existing.showContact));
+        setShowSpecies(Boolean(existing.showSpecies));
+        setShowBreed(Boolean(existing.showBreed));
+        setShowBirthDate(Boolean(existing.showBirthDate));
         setSpecies(existing.species || "");
         setBreed(existing.breed || "");
         setBirthDate(existing.birthDate || "");
@@ -364,6 +364,23 @@ export default function Owner() {
                       <div style={{ marginTop: 8, fontSize: 13 }}>
                         {new Date(report.created_at).toLocaleString()}
                       </div>
+                      <button
+                        className="button"
+                        style={{ marginTop: 10 }}
+                        onClick={async () => {
+                          if (!result?.petId) return;
+                          if (!window.confirm("Remove this found-pet report?")) return;
+                          const response = await fetch(
+                            `/api/pets/${encodeURIComponent(result.petId)}/found/${encodeURIComponent(report.id)}`,
+                            { method: "DELETE" }
+                          );
+                          if (response.ok) {
+                            setFoundReports(reports => reports.filter(item => item.id !== report.id));
+                          }
+                        }}
+                      >
+                        Remove report
+                      </button>
                     </div>
                   ))}
                   {!reportsRead && (
