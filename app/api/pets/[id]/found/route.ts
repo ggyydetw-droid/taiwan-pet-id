@@ -2,6 +2,8 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../../lib/auth";
 
+export const dynamic = "force-dynamic";
+
 async function db() {
   const { env } = getCloudflareContext();
   return (env as any).DB;
@@ -157,7 +159,10 @@ export async function GET(
     .bind(id)
     .all();
 
-  return NextResponse.json({ reports: result.results ?? [] });
+  return NextResponse.json(
+    { reports: result.results ?? [] },
+    { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate" } }
+  );
 }
 
 
