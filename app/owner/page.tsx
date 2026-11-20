@@ -498,9 +498,15 @@ export default function Owner() {
                       summary: healthSummary,
                       occurredAt: healthDate,
                       showPublic: healthPublic,
+                      name: result.name,
                     }),
                   });
                   setHealthSaving(false);
+                  if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    window.alert(errorData.message || "Could not save the health record.");
+                    return;
+                  }
                   if (response.ok) {
                     const refreshed = await fetch(`/api/pets/${encodeURIComponent(result.petId)}/health?t=${Date.now()}`, { cache: "no-store" });
                     if (refreshed.ok) {
