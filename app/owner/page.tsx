@@ -168,10 +168,26 @@ export default function Owner() {
         `/api/pets/${encodeURIComponent(result.petId)}/photo`,
         { method: "POST", body: formData }
       );
-      const data = await response.json();
+
+      const responseText = await response.text();
+      let data: { message?: string; photoUrl?: string } = {};
+
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          data = { message: responseText };
+        }
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || "Unable to upload photo.");
+        throw new Error(
+          data.message || `Photo upload failed (HTTP ${response.status}).`
+        );
+      }
+
+      if (!data.photoUrl) {
+        throw new Error("Photo upload completed but no photo URL was returned.");
       }
 
       setPhotoUrl(data.photoUrl);
