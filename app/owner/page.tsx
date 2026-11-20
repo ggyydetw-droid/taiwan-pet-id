@@ -24,6 +24,8 @@ export default function Owner() {
   const [showSpecies, setShowSpecies] = useState(false);
   const [showBreed, setShowBreed] = useState(false);
   const [showBirthDate, setShowBirthDate] = useState(false);
+  const [showPhoto, setShowPhoto] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState("");
   const [species, setSpecies] = useState("");
   const [breed, setBreed] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -77,6 +79,8 @@ export default function Owner() {
         setShowSpecies(Boolean(existing.showSpecies));
         setShowBreed(Boolean(existing.showBreed));
         setShowBirthDate(Boolean(existing.showBirthDate));
+        setShowPhoto(Boolean(existing.showPhoto));
+        setPhotoUrl(existing.photoUrl || "");
         setSpecies(existing.species || "");
         setBreed(existing.breed || "");
         setBirthDate(existing.birthDate || "");
@@ -122,6 +126,8 @@ export default function Owner() {
         showSpecies,
         showBreed,
         showBirthDate,
+        showPhoto,
+        photoUrl,
         lost,
       }),
     });
@@ -238,6 +244,35 @@ export default function Owner() {
                   />
                 </div>
               )}
+
+              <section style={{ marginTop: 24 }}>
+                <h2>Pet photo</h2>
+                <p>Add an image URL to help people identify your pet.</p>
+                <div className="field">
+                  <label>Photo URL</label>
+                  <input
+                    type="url"
+                    value={photoUrl}
+                    onChange={e => setPhotoUrl(e.target.value)}
+                    placeholder="https://example.com/milo.jpg"
+                  />
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={showPhoto}
+                      onChange={e => setShowPhoto(e.target.checked)}
+                    />{" "}
+                    Show pet photo publicly
+                  </label>
+                </div>
+                {photoUrl && (
+                  <img
+                    src={photoUrl}
+                    alt={result.name ? `${result.name} photo preview` : "Pet photo preview"}
+                    style={{ width: "100%", maxWidth: 320, maxHeight: 320, objectFit: "cover", borderRadius: 12, marginTop: 8 }}
+                  />
+                )}
+              </section>
 
               <section style={{ marginTop: 24 }}>
                 <h2>Pet details</h2>
