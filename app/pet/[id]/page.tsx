@@ -12,6 +12,7 @@ type PublicPet = {
   birthDate?: string;
   photoUrl?: string;
   lost?: boolean;
+  healthRecords?: Array<{ id: string; record_type: string; summary: string; occurred_at: string }>;
 };
 
 export default function PublicPetPage({
@@ -30,6 +31,7 @@ export default function PublicPetPage({
   const [foundSaving, setFoundSaving] = useState(false);
   const [foundSaved, setFoundSaved] = useState(false);
   const [foundError, setFoundError] = useState("");
+  const [healthRecords, setHealthRecords] = useState<PublicPet["healthRecords"]>([]);
 
   useEffect(() => {
     params.then(({ id }) =>
@@ -38,6 +40,14 @@ export default function PublicPetPage({
           const data = await response.json();
           if (!response.ok) throw new Error(data.message || "Unable to load pet.");
           setPet(data);
+        })
+        .then(async (data) => {
+          setPet(data);
+          const healthResponse = await fetch(`/api/pets/${encodeURIComponent(id)}/health?t=${Date.now()}`, { cache: "no-store" });
+          if (healthResponse.ok) {
+            const healthData = await healthResponse.json();
+            setHealthRecords(healthData.records || []);
+          }
         })
         .catch((err) => setError(err.message))
     );
@@ -288,6 +298,20 @@ export default function PublicPetPage({
               <section style={{ marginTop: 16 }}>
                 <h2>Owner contact</h2>
                 <p>{pet.contact}</p>
+              </section>
+            )}
+
+            {healthRecords && healthRecords.length > 0 && (
+              <section style={{ marginTop: 24 }}>
+                <h2>Health records</h2>
+                <p>Owner-shared medical history</p>
+                {healthRecords.map(record => (
+                  <div className="status" key={record.id} style={{ marginTop: 12 }}>
+                    <strong>{record.record_type}</strong>
+                    <div>{record.occurred_at}</div>
+                    <div style={{ marginTop: 6 }}>{record.summary}</div>
+                  </div>
+                ))}
               </section>
             )}
 
