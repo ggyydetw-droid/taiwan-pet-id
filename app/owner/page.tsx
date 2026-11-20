@@ -26,9 +26,6 @@ export default function Owner() {
   const [showBirthDate, setShowBirthDate] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false);
   const [photoUrl, setPhotoUrl] = useState("");
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoUploading, setPhotoUploading] = useState(false);
-  const [photoError, setPhotoError] = useState("");
   const [species, setSpecies] = useState("");
   const [breed, setBreed] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -154,52 +151,6 @@ export default function Owner() {
     if (response.ok) setSaved(true);
   }
 
-  async function uploadPetPhoto() {
-    if (!result?.petId || !photoFile) return;
-
-    setPhotoUploading(true);
-    setPhotoError("");
-
-    try {
-      const formData = new FormData();
-      formData.append("photo", photoFile);
-
-      const response = await fetch(
-        `/api/pets/${encodeURIComponent(result.petId)}/photo`,
-        { method: "POST", body: formData }
-      );
-
-      const responseText = await response.text();
-      let data: { message?: string; photoUrl?: string } = {};
-
-      if (responseText) {
-        try {
-          data = JSON.parse(responseText);
-        } catch {
-          data = { message: responseText };
-        }
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || `Photo upload failed (HTTP ${response.status}).`
-        );
-      }
-
-      if (!data.photoUrl) {
-        throw new Error("Photo upload completed but no photo URL was returned.");
-      }
-
-      setPhotoUrl(data.photoUrl);
-      setPhotoFile(null);
-      setShowPhoto(true);
-    } catch (error) {
-      setPhotoError(error instanceof Error ? error.message : "Unable to upload photo.");
-    } finally {
-      setPhotoUploading(false);
-    }
-  }
-
   async function copyPublicLink() {
     if (!publicUrl) return;
     await navigator.clipboard.writeText(publicUrl);
@@ -308,63 +259,7 @@ export default function Owner() {
                 </div>
               )}
 
-              <section style={{ marginTop: 24 }}>
-                <h2>Pet photo</h2>
-                <p>Upload a photo directly to secure Cloudflare storage. JPG, PNG, GIF, and WebP images up to 5 MB are supported.</p>
 
-                <div className="field">
-                  <label>Choose photo</label>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/gif,image/webp"
-                    onChange={e => {
-                      setPhotoFile(e.target.files?.[0] || null);
-                      setPhotoError("");
-                    }}
-                  />
-                </div>
-
-                {photoFile && (
-                  <div className="status" style={{ marginTop: 8 }}>
-                    Selected: {photoFile.name}
-                  </div>
-                )}
-
-                <button
-                  className="button"
-                  type="button"
-                  onClick={uploadPetPhoto}
-                  disabled={!photoFile || photoUploading}
-                  style={{ marginTop: 8 }}
-                >
-                  {photoUploading ? "Uploading..." : "Upload pet photo"}
-                </button>
-
-                <div className="field" style={{ marginTop: 12 }}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={showPhoto}
-                      onChange={e => setShowPhoto(e.target.checked)}
-                    />{" "}
-                    Show pet photo publicly
-                  </label>
-                </div>
-
-                {photoError && (
-                  <div className="status warning" style={{ marginTop: 8 }}>
-                    {photoError}
-                  </div>
-                )}
-
-                {photoUrl && (
-                  <img
-                    src={photoUrl}
-                    alt={result.name ? `${result.name} photo preview` : "Pet photo preview"}
-                    style={{ width: "100%", maxWidth: 320, maxHeight: 320, objectFit: "cover", borderRadius: 12, marginTop: 8 }}
-                  />
-                )}
-              </section>
 
               <section style={{ marginTop: 24 }}>
                 <h2>Pet details</h2>
