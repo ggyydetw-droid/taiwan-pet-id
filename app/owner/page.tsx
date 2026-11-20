@@ -239,7 +239,26 @@ export default function Owner() {
                   <input type="checkbox" checked={showContact} onChange={e => setShowContact(e.target.checked)} />{" "}
                   Show owner contact
                 </label>
+                <label>
+                  <input type="checkbox" checked={showPhoto} onChange={e => setShowPhoto(e.target.checked)} />{" "}
+                  Show pet photo publicly
+                </label>
               </div>
+
+              {showPhoto && (
+                <div className="field">
+                  <label>Pet photo URL</label>
+                  <input
+                    type="url"
+                    value={photoUrl}
+                    onChange={e => setPhotoUrl(e.target.value)}
+                    placeholder="https://example.com/milo.jpg"
+                  />
+                  <p style={{ fontSize: 13, marginTop: 6 }}>
+                    Enter a direct image URL. The image will be shown on the public Pet ID page only when public photo display is enabled.
+                  </p>
+                </div>
+              )}
 
               {showCity && (
                 <div className="field">
