@@ -101,7 +101,7 @@ export async function getAuthenticatedUser(request: Request) {
   await ensureAuthSchema(database);
 
   const cookieHeader = request.headers.get("cookie") || "";
-  const match = cookieHeader.match(/(?:^|;\\s*)tpid_session=([^;]+)/);
+  const match = cookieHeader.match(/(?:^|;\s*)tpid_session=([^;]+)/);
   if (!match) return { database, user: null };
 
   const tokenHash = await sha256(decodeURIComponent(match[1]));
@@ -149,7 +149,7 @@ export async function deleteCurrentSession(request: Request) {
   if (!database) return;
 
   const cookieHeader = request.headers.get("cookie") || "";
-  const match = cookieHeader.match(/(?:^|;\\s*)tpid_session=([^;]+)/);
+  const match = cookieHeader.match(/(?:^|;\s*)tpid_session=([^;]+)/);
   if (!match) return;
 
   const tokenHash = await sha256(decodeURIComponent(match[1]));
