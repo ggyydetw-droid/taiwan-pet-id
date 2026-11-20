@@ -26,6 +26,9 @@ export default function Owner() {
   const [showBirthDate, setShowBirthDate] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false);
   const [photoUrl, setPhotoUrl] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState("");
   const [species, setSpecies] = useState("");
   const [breed, setBreed] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -151,6 +154,36 @@ export default function Owner() {
     if (response.ok) setSaved(true);
   }
 
+  async function uploadPetPhoto() {
+    if (!result?.petId || !photoFile) return;
+
+    setPhotoUploading(true);
+    setPhotoError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("photo", photoFile);
+
+      const response = await fetch(
+        `/api/pets/${encodeURIComponent(result.petId)}/photo`,
+        { method: "POST", body: formData }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to upload photo.");
+      }
+
+      setPhotoUrl(data.photoUrl);
+      setPhotoFile(null);
+      setShowPhoto(true);
+    } catch (error) {
+      setPhotoError(error instanceof Error ? error.message : "Unable to upload photo.");
+    } finally {
+      setPhotoUploading(false);
+    }
+  }
+
   async function copyPublicLink() {
     if (!publicUrl) return;
     await navigator.clipboard.writeText(publicUrl);
@@ -261,15 +294,37 @@ export default function Owner() {
 
               <section style={{ marginTop: 24 }}>
                 <h2>Pet photo</h2>
-                <p>Add an image URL to help people identify your pet.</p>
+                <p>Upload a photo directly to secure Cloudflare storage. JPG, PNG, GIF, and WebP images up to 5 MB are supported.</p>
+
                 <div className="field">
-                  <label>Photo URL</label>
+                  <label>Choose photo</label>
                   <input
-                    type="url"
-                    value={photoUrl}
-                    onChange={e => setPhotoUrl(e.target.value)}
-                    placeholder="https://example.com/milo.jpg"
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={e => {
+                      setPhotoFile(e.target.files?.[0] || null);
+                      setPhotoError("");
+                    }}
                   />
+                </div>
+
+                {photoFile && (
+                  <div className="status" style={{ marginTop: 8 }}>
+                    Selected: {photoFile.name}
+                  </div>
+                )}
+
+                <button
+                  className="button"
+                  type="button"
+                  onClick={uploadPetPhoto}
+                  disabled={!photoFile || photoUploading}
+                  style={{ marginTop: 8 }}
+                >
+                  {photoUploading ? "Uploading..." : "Upload pet photo"}
+                </button>
+
+                <div className="field" style={{ marginTop: 12 }}>
                   <label>
                     <input
                       type="checkbox"
@@ -279,6 +334,13 @@ export default function Owner() {
                     Show pet photo publicly
                   </label>
                 </div>
+
+                {photoError && (
+                  <div className="status warning" style={{ marginTop: 8 }}>
+                    {photoError}
+                  </div>
+                )}
+
                 {photoUrl && (
                   <img
                     src={photoUrl}
